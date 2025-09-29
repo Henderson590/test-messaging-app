@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { db, auth, storage } from "../firebase";
+import { db, auth } from "../firebase";
 import {
   collection,
   addDoc,
@@ -11,7 +11,6 @@ import {
   getDoc,
   updateDoc,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function Chat({ friend, currentUser, onClose }) {
   // chatId must be defined before any hooks reference it
@@ -74,7 +73,6 @@ export default function Chat({ friend, currentUser, onClose }) {
     };
     fetchColor();
   }, [chatId]);
-  const [showColorPicker, setShowColorPicker] = useState(false);
 
   // contrast helper
   const getContrastColor = (hex) => {
@@ -202,7 +200,7 @@ export default function Chat({ friend, currentUser, onClose }) {
 
   return (
     <div className="chat-container">
-      <div className="chat-header" style={{ background: chatColor, background: "linear-gradient(90deg,#ffb6b6,#b6eaff)", display: 'flex', alignItems: 'center', position: 'relative', paddingLeft: 0 }}>
+      <div className="chat-header" style={{ background: "linear-gradient(90deg,#ffb6b6,#b6eaff)", display: 'flex', alignItems: 'center', position: 'relative', paddingLeft: 0 }}>
         {/* X close button on left, vertically centered */}
         <button
           aria-label="Close chat"

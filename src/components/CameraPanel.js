@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { db, auth } from '../firebase';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
-import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../pages/ChatListPage.css";
 
@@ -69,7 +68,7 @@ export default function CameraPanel({ isOpen }) {
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, []);
+  }, [ stream ]);
 
   const handleCapture = () => {
     const video = videoRef.current;
@@ -219,10 +218,6 @@ export default function CameraPanel({ isOpen }) {
                         const data = await res.json();
                         imageUrl = data.secure_url;
                       } catch (e) {
-                        toast.error("Picture failed to send", {
-                            position: "top-center",
-                            autoClose: 2000,
-                        });
                         return;
                       }
                       // Compose chatId
@@ -241,10 +236,6 @@ export default function CameraPanel({ isOpen }) {
                       });
                       setShowFriendOverlay(false);
                       setPhoto(null);
-                      toast.success("Picture sent successfully!", {
-                            position: "top-center",
-                            autoClose: 2000,
-                        });
                     }}
                   >
                     {friend.nickname || friend.username || friend.email || 'Unknown'}
