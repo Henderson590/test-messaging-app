@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "chatterbox-mobile",
+    "slug": "",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/ChatterBox.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/ChatterBox.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0078d4"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/ChatterBox.png",
+        "backgroundColor": "#f0f2f5"
+      },
+      "backgroundColor": "#f0f2f5"
+    },
+    "web": {
+      "favicon": "./assets/ChatterBox.png"
+    },
+    "plugins": [
+    ],
+    "scheme": "chatterbox"
+  }
+}
