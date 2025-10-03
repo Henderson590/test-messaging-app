@@ -1,11 +1,9 @@
-// components/Login.js
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
-import { auth } from "../firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
 import Toast from "react-native-toast-message";
+import { supabase } from "../supabase";
 
-export default function Login({ onSuccess }) {
+export default function Login({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,12 +16,24 @@ export default function Login({ onSuccess }) {
 
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
       Toast.show({ type: "success", text1: "Login successful!" });
-      // onSuccess is no longer needed, navigation is automatic
+      console.log('User logged in:', data.user);
     } catch (err) {
       console.error("Login error:", err);
-      Toast.show({ type: "error", text1: "Incorrect email or password" });
+      Toast.show({ 
+        type: "error", 
+        text1: "Login failed", 
+        text2: err.message || "Incorrect email or password" 
+      });
     } finally {
       setLoading(false);
     }
@@ -89,12 +99,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#0078d4",
   },
-  info: {
-    fontSize: 14,
-    marginBottom: 18,
-    textAlign: "center",
-    color: "#555",
-  },
   input: {
     height: 50,
     borderWidth: 1,
@@ -118,3 +122,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+

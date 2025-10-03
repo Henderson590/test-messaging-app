@@ -1,12 +1,9 @@
-// components/Signup.js
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
-import { auth, db } from "../firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { supabase } from "../supabase";
 import Toast from "react-native-toast-message";
 
-export default function Signup({ onSuccess }) {
+export default function Signup({ navigation }) {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,23 +17,45 @@ export default function Signup({ onSuccess }) {
 
     setLoading(true);
     try {
-      const userCred = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCred.user;
-
-      await setDoc(doc(db, "users", user.uid), {
-        username: username.trim(),
-        email,
-        createdAt: serverTimestamp(),
-        friends: []
+      // Sign up user with Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: {
+            username: username.trim(),
+          }
+        }
       });
+
+      if (error) {
+        throw error;
+      }
+
+      // Save additional user data to Supabase database
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert([
+            {
+              id: data.user.id,
+              username: username.trim(),
+              email: email,
+              created_at: new Date(),
+              friends: []
+            }
+          ]);
+
+        if (profileError) {
+          console.warn('Profile creation error:', profileError);
+        }
+      }
 
       Toast.show({ type: "success", text1: "Account created successfully!" });
 
       setUsername("");
       setEmail("");
       setPassword("");
-
-      // onSuccess is no longer needed, navigation is automatic
     } catch (err) {
       console.error("Signup error:", err);
       Toast.show({ type: "error", text1: "Failed to create account", text2: err.message });
@@ -46,51 +65,49 @@ export default function Signup({ onSuccess }) {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <View style={styles.box}>
-          <Text style={styles.title}>Sign Up</Text>
-          <Text style={styles.info}>
-            Choose a username unique to you. Friends will use this to add you.
-          </Text>
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <View style={styles.box}>
+        <Text style={styles.title}>Sign Up</Text>
+        <Text style={styles.info}>
+          Choose a username unique to you. Friends will use this to add you.
+        </Text>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Username"
-            placeholderTextColor="#000"  // <-- added
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize="none"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#000"  // <-- added
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="#000"  // <-- added
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+        <TextInput
+          style={styles.input}
+          placeholder="Username"
+          placeholderTextColor="#000"
+          value={username}
+          onChangeText={setUsername}
+          autoCapitalize="none"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="#000"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          placeholderTextColor="#000"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
 
-          <TouchableOpacity
-            style={[styles.button, loading && { opacity: 0.6 }]}
-            onPress={handleSignup}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>{loading ? "Creating..." : "Sign Up"}</Text>
-          </TouchableOpacity>
-        </View>
-        <Toast />
-      </ScrollView>
-    </View>
+        <TouchableOpacity
+          style={[styles.button, loading && { opacity: 0.6 }]}
+          onPress={handleSignup}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>{loading ? "Creating..." : "Sign Up"}</Text>
+        </TouchableOpacity>
+      </View>
+      <Toast />
+    </ScrollView>
   );
 }
 
@@ -135,7 +152,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 16,
     backgroundColor: "#fdfdfd",
-    fontcolor: "#927e96",
+    color: "#927e96", // fixed
   },
   button: {
     backgroundColor: "#0078d4",
@@ -150,3 +167,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+

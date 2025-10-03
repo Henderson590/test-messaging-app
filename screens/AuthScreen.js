@@ -12,8 +12,6 @@ import {
 } from "react-native";
 import Signup from "../components/Signup";
 import Login from "../components/Login";
-import { auth } from "../firebase";
-
 
 
 // Define a fixed light theme for this screen

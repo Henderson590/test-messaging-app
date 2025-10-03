@@ -1,86 +1,31 @@
-// screens/MediaGalleryScreen.js
-import React, { useState, useRef } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  Pressable,
-  Modal,
-} from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useTheme } from "../contexts/ThemeContext";
 
 export default function MediaGalleryScreen({ route, navigation }) {
-  const { media } = route.params;
-  const [activeImage, setActiveImage] = useState(null);
-
-  const openImage = (item, index) => {
-    setActiveImage(item);
-  };
-
-  const closeImage = () => {
-    setActiveImage(null);
-  };
-
-  const renderItem = ({ item, index }) => {
-    // Ensure we have a unique key for the ref
-    const itemKey = item.id || index;
-    return (
-      <TouchableOpacity
-        style={styles.imageContainer}
-        onPress={() => openImage(item, itemKey)}
-      >
-        <Image source={{ uri: item.image }} style={styles.image} />
-      </TouchableOpacity>
-    );
-  };
-
+  const { colors } = useTheme();
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backArrow}>←</Text>
+          <Text style={styles.backArrow}>?</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Shared Media</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Media Gallery</Text>
       </View>
-      <FlatList
-        data={media}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        numColumns={3}
-        contentContainerStyle={styles.list}
-      />
-      {activeImage && (
-        <Modal visible={!!activeImage} transparent={true} animationType="fade" onRequestClose={closeImage}>
-          <Pressable style={styles.fullScreenContainer} onPress={closeImage}>
-            <Image source={{ uri: activeImage.image }} style={styles.fullScreenImage} resizeMode="contain" />
-          </Pressable>
-        </Modal>
-      )}
+      <View style={styles.content}>
+        <Text style={[styles.message, { color: colors.text }]}>Under Construction</Text>
+        <Text style={[styles.subtitle, { color: colors.subtext }]}>This feature is being updated for Supabase.</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 10,
-    backgroundColor: "#f7f7f7",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  backArrow: { fontSize: 16, color: "#0078d4", marginRight: 12, paddingBottom: 2, flex: 1 },
-  headerTitle: { fontSize: 20, fontWeight: "bold", flex: 2, textAlign: 'center' },
-  list: { padding: 4 },
-  imageContainer: { flex: 1 / 3, aspectRatio: 1, padding: 4 },
-  image: { width: "100%", height: "100%", borderRadius: 4 },
-  fullScreenContainer: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.9)', justifyContent: 'center', alignItems: 'center' },
-  fullScreenImage: { width: '100%', height: '100%' },
+  container: { flex: 1 },
+  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 15, paddingTop: 50, paddingBottom: 15 },
+  backArrow: { fontSize: 24, color: "#0078d4", marginRight: 15 },
+  headerTitle: { fontSize: 18, fontWeight: "600" },
+  content: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
+  message: { fontSize: 18, fontWeight: "600", textAlign: "center", marginBottom: 10 },
+  subtitle: { fontSize: 14, textAlign: "center" },
 });

@@ -1,9 +1,8 @@
 // screens/AppSettingsScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert, ScrollView } from 'react-native';
-import { auth, db } from '../firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { reauthenticateWithCredential, EmailAuthProvider, updatePassword } from 'firebase/auth';
+import { supabase } from '../supabase';
+import SupabaseService from '../services/SupabaseService';
 import Toast from 'react-native-toast-message';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -13,53 +12,40 @@ export default function AppSettingsScreen({ navigation }) {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
-      if (userDoc.exists()) {
-        setUser({ uid: userDoc.id, ...userDoc.data() });
+      const currentUser = await SupabaseService.getCurrentUser();
+      if (currentUser) {
+        const { data: userData, error } = await SupabaseService.getUserProfile(currentUser.id);
+        if (userData && !error) {
+          setUser({ uid: userData.id, ...userData });
+        }
       }
     };
     fetchUserData();
   }, []);
 
-  const reauthenticate = (currentPassword) => {
-    const user = auth.currentUser;
-    const cred = EmailAuthProvider.credential(user.email, currentPassword);
-    return reauthenticateWithCredential(user, cred);
-  };
-
   const handleChangePassword = () => {
-    let currentPassword, newPassword;
     Alert.prompt(
       "Change Password",
-      "Enter your current password.",
+      "Enter your new password.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Next",
-          onPress: (password) => {
-            currentPassword = password;
-            Alert.prompt(
-              "Change Password",
-              "Enter your new password.",
-              [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Confirm",
-                  onPress: async (newPass) => {
-                    newPassword = newPass;
-                    try {
-                      await reauthenticate(currentPassword);
-                      await updatePassword(auth.currentUser, newPassword);
-                      Toast.show({ type: 'success', text1: 'Password updated successfully!' });
-                    } catch (err) {
-                      console.error(err);
-                      Toast.show({ type: 'error', text1: 'Failed to update password.', text2: 'Please check your current password.' });
-                    }
-                  },
-                },
-              ],
-              "secure-text"
-            );
+          text: "Update",
+          onPress: async (newPassword) => {
+            if (!newPassword || newPassword.length < 6) {
+              Toast.show({ type: 'error', text1: 'Password must be at least 6 characters long.' });
+              return;
+            }
+            try {
+              const { error } = await SupabaseService.updatePassword(newPassword);
+              if (error) {
+                throw error;
+              }
+              Toast.show({ type: 'success', text1: 'Password updated successfully!' });
+            } catch (err) {
+              console.error(err);
+              Toast.show({ type: 'error', text1: 'Failed to update password.', text2: err.message });
+            }
           },
         },
       ],
@@ -68,38 +54,40 @@ export default function AppSettingsScreen({ navigation }) {
   };
 
   const handleChangeUsername = () => {
-    let password, newUsername;
     Alert.prompt(
       "Change Username",
-      "To change your username, please confirm your password.",
+      "Enter your new username.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Next",
-          onPress: (pass) => {
-            password = pass;
-            Alert.prompt(
-              "Change Username",
-              "Enter your new username.",
-              async (username) => {
-                newUsername = username;
-                if (!newUsername.trim()) return;
-                try {
-                  await reauthenticate(password);
-                  const userRef = doc(db, "users", auth.currentUser.uid);
-                  await updateDoc(userRef, { username: newUsername.trim() });
-                  Toast.show({ type: 'success', text1: 'Username updated!' });
-                } catch (err) {
-                  console.error(err);
-                  Toast.show({ type: 'error', text1: 'Failed to update username.', text2: 'Please check your password.' });
-                }
-              },
-              "plain-text"
-            );
+          text: "Update",
+          onPress: async (newUsername) => {
+            if (!newUsername || !newUsername.trim()) {
+              Toast.show({ type: 'error', text1: 'Username cannot be empty.' });
+              return;
+            }
+            try {
+              const currentUser = await SupabaseService.getCurrentUser();
+              if (!currentUser) throw new Error('User not found');
+              
+              const { error } = await SupabaseService.updateUserProfile(currentUser.id, {
+                username: newUsername.trim()
+              });
+              
+              if (error) {
+                throw error;
+              }
+              
+              Toast.show({ type: 'success', text1: 'Username updated!' });
+              setUser(prev => ({ ...prev, username: newUsername.trim() }));
+            } catch (err) {
+              console.error(err);
+              Toast.show({ type: 'error', text1: 'Failed to update username.', text2: err.message });
+            }
           },
         },
       ],
-      "secure-text"
+      "plain-text"
     );
   };
 
@@ -108,17 +96,36 @@ export default function AppSettingsScreen({ navigation }) {
     Alert.prompt("Set Birthday", "Enter your birthday (MM/DD/YYYY)", async (birthday) => {
       if (!birthday) return;
       try {
-        const userRef = doc(db, "users", auth.currentUser.uid);
-        await updateDoc(userRef, { birthday: birthday.trim() });
+        const currentUser = await SupabaseService.getCurrentUser();
+        if (!currentUser) throw new Error('User not found');
+        
+        const { error } = await SupabaseService.updateUserProfile(currentUser.id, {
+          birthday: birthday.trim()
+        });
+        
+        if (error) {
+          throw error;
+        }
+        
         Toast.show({ type: 'success', text1: 'Birthday saved!' });
+        setUser(prev => ({ ...prev, birthday: birthday.trim() }));
       } catch (err) {
-        Toast.show({ type: 'error', text1: 'Failed to save birthday.' });
+        console.error(err);
+        Toast.show({ type: 'error', text1: 'Failed to save birthday.', text2: err.message });
       }
     });
   };
 
   const handleLogout = async () => {
-    await auth.signOut();
+    try {
+      const { error } = await SupabaseService.signOut();
+      if (error) {
+        Toast.show({ type: 'error', text1: 'Failed to sign out.', text2: error.message });
+      }
+    } catch (err) {
+      console.error(err);
+      Toast.show({ type: 'error', text1: 'Failed to sign out.' });
+    }
   };
 
   return (
@@ -166,7 +173,7 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
         borderBottomWidth: 1
     },
-    backArrow: { fontSize: 16, color: '#0078d4', paddingBottom: 2, flex: 1 },
+    backArrow: { fontSize: 26, color: '#0078d4', paddingBottom: 2, flex: 1 },
     headerTitle: { fontSize: 20, fontWeight: 'bold', flex: 2, textAlign: 'center' },
     settingRow: {
         flexDirection: 'row',
@@ -187,3 +194,4 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     }
 });
+

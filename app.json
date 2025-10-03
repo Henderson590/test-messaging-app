@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "chatterbox-mobile",
-    "slug": "",
+    "slug": "chatterbox-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/ChatterBox.png",
@@ -15,20 +15,32 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "chatterbox",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "We use the camera to let you take photos and videos for chats and stories.",
+        "NSMicrophoneUsageDescription": "We access the microphone for recording videos in camera mode.",
+        "NSPhotoLibraryAddUsageDescription": "We save captured photos to your library when you choose Download."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/ChatterBox.png",
         "backgroundColor": "#f0f2f5"
       },
-      "backgroundColor": "#f0f2f5"
+      "backgroundColor": "#f0f2f5",
+      "package": "com.henderson_590.chatterboxmobile"
     },
     "web": {
       "favicon": "./assets/ChatterBox.png"
     },
-    "plugins": [
-    ],
-    "scheme": "chatterbox"
+    "plugins": ["expo-notifications"],
+    "scheme": "chatterbox",
+    "extra": {
+      "eas": {
+        "projectId": "5678c491-ba2c-4687-be29-7cb1993abbac"
+      }
+    }
   }
 }
